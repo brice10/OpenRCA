@@ -1,49 +1,141 @@
-# OpenRCA
+# Adaptation Scenarios Dataset: Extending OpenRCA for System Mitigation
 
-![Python Version](https://img.shields.io/badge/Python-3776AB?&logo=python&logoColor=white-blue&label=3.10%20%7C%203.11)&ensp;
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)&ensp;
-![Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)
+## Overview
 
-</div>
+This project extends the foundational [Original OpenRCA Project](./README_OLD.md) to create a comprehensive **Adaptation Scenarios Dataset**. While OpenRCA provides the mechanism to identify root causes of failures in complex systems, this adaptation project takes the analysis one step further: it identifies and prioritizes the concrete actions needed to mitigate or prevent those failures.
 
-OpenRCA is a benchmark for assessing LLMs' root cause analysis ability in a software operating scenario. When given a natural language query, LLMs need to analyze large volumes of telemetry data to identify the relevant root cause elements. This process requires the models to understand complex system dependencies and perform comprehensive reasoning across various types of telemetry data, including KPI time series, dependency trace graphs, and semi-structured log text.
+### Objective
 
-<img src="./.asset/openrca.png"/> 
+Transform failure analysis data into actionable mitigation strategies by creating a dataset that captures:
+- **What failed** (Observation): Technical descriptors of system behavior anomalies
+- **Why it failed** (Cause): Business logic and contextual reasons
+- **How to fix it** (Adaptation Actions): Prioritized, actionable mitigation strategies
 
-</div>
+## The Adaptation Scenario Data Model
 
-We also introduce RCA-agent as a baseline for OpenRCA. By using Python for data retrieval and analysis, the model avoids processing overly long contexts, enabling it to focus on reasoning and scalable for extensive telemetry.
+An **Adaptation Scenario** is a structured representation of a failure and its resolution pathway. It consists of three interdependent components:
 
-<img src="./.asset/rcaagent.png"/> 
+### 1. The Observation
+**Definition**: The implementable description of a dynamic behavior on a metric or set of metrics that causes (or is likely to cause) a system failure.
 
-## ✨ Quick Start
+**Characteristics**:
+- Technical and metric-focused
+- Automatically detectable or measurable
+- Observable from logs, metrics, and traces
+- Examples:
+  - CPU utilization exceeds 95% for 5+ consecutive minutes
+  - Disk I/O latency increases from <5ms to >50ms
+  - Network packet loss rate jumps from 0% to 15%
+  - Memory heap usage grows linearly, reaching saturation in <2 hours
 
-> ⚠️ Since the OpenRCA dataset includes a large amount of telemetry and RCA-agent requires extensive memory operations, we recommend using a device with at least 80GB of storage space and 32GB of memory.
+### 2. The Cause
+**Definition**: A human-understandable description of the business logic or operational event that triggered the observation.
 
-### 🛠️ Installation
+**Characteristics**:
+- Context-rich and business-aware
+- Provides the "why" behind the technical observation
+- Derived from logs, metrics, traces, and domain knowledge
+- Examples:
+  - Website promotion campaign launched, causing 10x traffic surge
+  - Scheduled batch job concurrency set to 500, overwhelming database connection pool
+  - Disk cleanup job failed silently for 7 days, leading to gradual capacity exhaustion
+  - Third-party API latency increased from 100ms to 2s, cascading to application layer
 
-OpenRCA requires **Python >= 3.10**. It can be installed by running the following command:
-```bash
-# [optional to create conda environment]
-# conda create -n openrca python=3.10
-# conda activate openrca
+**Key Distinction from Observation**:
+- Observation describes *what* happened (metric behavior)
+- Cause explains *why* it happened (operational/business context)
 
-# clone the repository
-git clone https://github.com/microsoft/OpenRCA.git
-cd OpenRCA
-# install the requirements
-pip install -r requirements.txt
+### 3. Adaptation Actions
+**Definition**: The specific actions required to mitigate the failure, categorized by urgency and approach.
+
+**Characteristics**:
+- Actionable and component-specific
+- Prioritized by criticality
+- Classified as **curative** or **preventive**
+
+**Curative Actions**: Address the immediate failure state
+- Example: Immediately kill runaway database processes consuming 85% of CPU
+- Urgency: Address within minutes
+- Priority scoring: Higher (active system threat)
+
+**Preventive Actions**: Stop future occurrences by addressing root patterns
+- Example: Implement gradual disk space monitoring and alert when >85% full
+- Urgency: Address within hours/days
+- Priority scoring: Medium-to-High (prevents repeated incidents)
+
+**Priority Scoring Framework**:
+- **Critical (P0)**: Must be fixed immediately; system is actively degraded
+  - Example: Memory leak causing 30% memory increase/hour → allocate resources to identify leak
+- **High (P1)**: Should be fixed within hours; significant resource waste or degradation risk
+  - Example: Poor cache hit ratio (20% vs expected 80%) → optimize cache strategy
+- **Medium (P2)**: Should be fixed within days; improves efficiency or prevents future incidents
+  - Example: Log aggregation missing 40% of entries → improve log configuration
+- **Low (P3)**: Nice to have; minor improvements to resilience or efficiency
+  - Example: Startup time is 5% slower than baseline → profile startup sequence
+
+### Additional Dataset Columns
+
+| Column | Description |
+|--------|-------------|
+| **failure_nature** | Category of failure: `Network`, `Infrastructure`, or `Application` |
+| **extracted_context** | Relevant excerpts from logs, metrics, and traces that justify and support the observation |
+| **complete_description** | Narrative summary of the entire adaptation scenario from failure detection to resolution |
+| **component** | System component affected (e.g., database, cache, API gateway) |
+| **observation** | Technical metric-based description of the failure symptom |
+| **cause** | Business/operational explanation of why the failure occurred |
+| **adaptation_actions** | JSON or structured list of mitigation actions with priorities |
+| **priority_score** | Weighted priority (0-100) considering criticality and complexity |
+
+## Technical Architecture: 4-Step Implementation Workflow
+
+The adaptation scenario dataset is built through a systematic pipeline:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ Step 1: Contextual Extraction                                   │
+│ Extract relevant log/metric/trace data around each failure       │
+│ Output: record_detailed.csv per dataset                          │
+└─────────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ Step 2: Adaptation Agent Task Specification                      │
+│ Define agent instructions and task specifications                │
+│ Output: task_specification.json                                  │
+└─────────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ Step 3: Generation Script Execution                              │
+│ Generate prompts for adaptation action identification            │
+│ Output: prompt files for agent consumption                       │
+└─────────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ Step 4: Completion & Output                                      │
+│ Execute adaptation agent and generate final adaptation_data.csv │
+│ Output: Complete adaptation scenarios dataset                    │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-The telemetry data can be download from [Google Drive](https://drive.google.com/drive/folders/1wGiEnu4OkWrjPxfx5ZTROnU37-5UDoPM?usp=drive_link). Once you have download the telemetry dataset, please put them into the path `dataset/` (which is empty now).
+### Step 1: Contextual Extraction Script
+**Purpose**: Extract the most precise and concise telemetry context surrounding each failure.
 
-The directory structure of the data is:
+**Mechanism**:
+- Uses heuristic rules mapping failure types to data filtering patterns
+- Example: If `failure_reason = "high_memory_usage"`, extract only memory-related metrics
+- Scans log files, metric snapshots, and distributed traces within configurable time windows (default: ±5 minutes)
+- Samples up to 50 rows per telemetry file per failure record to manage data volume
+- Optionally filters to only the component(s) listed as root causes
+
+**Input**:
+- `record.csv` (OpenRCA failure records with timestamps and components)
+- Telemetry files organized by date under `dataset/{Dataset}/telemetry/{YYYY_MM_DD}/{log|metric|trace}/`
 
 ```
 .
 ├── {SYSTEM}
 │   ├── query.csv
 │   ├── record.csv
+|   ├── record_detailed.csv
 │   └── telemetry
 │       ├── {DATE}
 │       │   ├── log
@@ -53,151 +145,204 @@ The directory structure of the data is:
 └── ...
 ```
 
-where the `{SYSTEM}` can be `Telecom`, `Bank`, or `Market`, and the `{DATE}` format is `{YYYY_MM_DD}`.
+**Output**:
+- `record_detailed.csv`: Original failure records enriched with extracted telemetry excerpts and summary counts
 
-### 🖊️ Evaluation
+**Key Script**: `main/extract_record_details.py`
 
-Using following command to evaluate:
+### Step 2: Adaptation Agent Task Specification
+**Purpose**: Define the adaptation problem in structured form for the agent to understand and solve.
+
+**Components**:
+- **Task Definition**: Clear statement of what actions are needed to resolve each failure type
+- **Context Templates**: Structured format for presenting observations, causes, and current state
+- **Action Schema**: Defined format for adaptation actions (ID, target component, description)
+- **Scoring Rubric**: Guidelines for prioritizing actions
+
+**Format**: JSON configuration with sections for:
+- Failure categories (Network, Infrastructure, Application)
+- Mapping from observations to typical adaptation action families
+- Constraints and domain knowledge (e.g., "scaling decisions require approval", "config changes are low-risk")
+
+**Input**: `record_detailed.csv` from Step 1
+
+**Output**: `task_specification.json` guiding the agent's reasoning
+
+**Key Script**: `main/prompt.py` and `main/task_specification.json`
+
+### Step 3: Generation Script
+**Purpose**: Create LLM prompts that guide the adaptation agent toward identifying appropriate mitigation actions.
+
+**Mechanism**:
+- Loads `record_detailed.csv` and `task_specification.json`
+- For each failure record, constructs a detailed prompt containing:
+  - The observation (metric behavior)
+  - The cause (business context)
+  - Extracted telemetry data (logs, metrics, traces)
+  - Task instructions (what adaptation actions are expected)
+  - Scoring guidelines
+- Applies prompt templates for consistency across all records
+- Outputs individual prompt files or batch files for agent execution
+
+**Input**:
+- `record_detailed.csv`: Enriched failure records
+- `task_specification.json`: Agent task definitions
+- Telemetry files (accessed as needed)
+
+**Output**: Prompt files ready for agent consumption
+
+**Key Script**: `main/generate.py` (adapted from OpenRCA's original)
+
+### Step 4: Completion & Agent Execution
+**Purpose**: Execute the adaptation agent to generate mitigation strategies and compile the final dataset.
+
+**Mechanism**:
+- Agent processes each prompt generated in Step 3
+- For each failure, the agent identifies and ranks adaptation actions
+- Agent provides:
+  - List of specific, actionable adaptation actions
+  - Priority/criticality scores
+  - Rationale linking actions to observations and causes
+  - Target component and expected impact
+- Results are aggregated into the final adaptation scenarios dataset
+
+**Output**:
+- `adaptation_data.csv` or enhanced `record_detailed.csv` with:
+  - `adaptation_actions` column: JSON or structured list of actions
+  - `priority_scores` column: Prioritized recommendations
+  - `reasoning` column: Agent's explanation for action selection
+
+**Integration**: Leverages OpenRCA's agent framework or a specialized adaptation agent built on similar principles
+
+## Datasets
+
+The project includes three comprehensive datasets representing distinct failure domains:
+
+### Bank
+- **Domain**: Financial transaction processing system
+- **Scale**: 10 failure records with 10 days of telemetry
+- **Metrics**: Database query latency, transaction processing time, memory usage
+- **Typical Failures**: Query performance degradation, database connection exhaustion
+
+### Telecom
+- **Domain**: Telecommunications infrastructure and service delivery
+- **Scale**: ~20+ failure records with historical traces from April-May 2020
+- **Metrics**: Network latency, packet loss, service availability
+- **Typical Failures**: Network degradation, cascading service failures
+
+### Market (cloudbed-1 & cloudbed-2)
+- **Domain**: Cloud marketplace and e-commerce platform
+- **Scale**: Multiple failure records per cloudbed instance
+- **Metrics**: API response times, resource utilization, cache performance
+- **Typical Failures**: API gateway overload, cache invalidation issues, resource contention
+
+## Installation & Setup
+
+### Prerequisites
+- Python 3.9+
+- pandas, numpy
+- loguru
+- OpenRCA components (for agent integration)
+
+### Quick Start
 
 ```bash
-python -m main.evaluate \
-    -p [prediction csv files to evaluate] \
-    -q [groundtruth csv files to evaluate] \
-    -r [report csv file to save]
+# 1. Install dependencies
+pip install -r requirements.txt
+
+# 2. Extract detailed failure context (Step 1)
+python main/extract_record_details.py --dataset Bank Telecom "Market/cloudbed-1" "Market/cloudbed-2"
+
+# 3. Review and customize task specification (Step 2)
+# Edit main/task_specification.json to match your domain knowledge
+
+# 4. Generate adaptation prompts (Step 3)
+python main/generate.py --dataset Bank
+
+# 5. Execute adaptation agent (Step 4)
+python main/run_agent_standard.py --dataset Bank --output results/adaptation_data.csv
 ```
 
-Note that the prediction CSV file must include at least a "prediction" field for valid evaluation (extra fields are allowed). Each prediction should be a JSON-like string containing all required elements for each query (extra elements are allowed). If there are multiple failures, list them in chronological order (e.g., 1, 2, 3, ...):
+### Configuration
 
+Key command-line parameters:
 
-```json
-{
-    "1": {
-        "root cause occurrence datetime": "[%Y-%m-%d %H:%M:%S]",
-        "root cause component": "[COMPONENT]",
-        "root cause reason": "[REASON]"
-    }, 
-    ...
-}
+**extract_record_details.py**:
+- `--before`: Seconds of telemetry to capture before failure (default: 300)
+- `--after`: Seconds of telemetry to capture after failure (default: 300)
+- `--max-rows`: Maximum rows per telemetry file per record (default: 50)
+- `--component-only`: Filter telemetry to only the root cause component
+
+**generate.py**:
+- `--dataset`: Target dataset (Bank, Telecom, Market/cloudbed-1, Market/cloudbed-2)
+- `--prompt-template`: Custom prompt template file
+- `--output`: Output directory for generated prompts
+
+**run_agent_standard.py**:
+- `--dataset`: Target dataset
+- `--model`: LLM model to use (e.g., gpt-4, claude-3)
+- `--batch-size`: Number of failures to process in parallel
+
+## Project Roadmap
+
+| Phase | Timeline | Deliverables | Status |
+|-------|----------|--------------|--------|
+| **Phase 1: Infrastructure** | Weeks 1-2 | Step 1 extraction, data enrichment, schema validation | 🔵 In Progress |
+| **Phase 2: Agent Design** | Weeks 2-3 | Task specification, action taxonomy, scoring rubric | 🔵 In Progress |
+| **Phase 3: Generation** | Weeks 3-4 | Prompt generation, template development | ⚪ Planned |
+| **Phase 4: Agent Execution** | Weeks 4-5 | Adaptation action generation, quality assurance | ⚪ Planned |
+| **Phase 5: Analysis & Iteration** | Weeks 5-6 | Dataset analysis, refinement, documentation | ⚪ Planned |
+
+## Directory Structure
+
+```
+OpenRCA/
+├── dataset/                          # Source datasets
+│   ├── Bank/
+│   │   ├── record.csv               # OpenRCA failure records
+│   │   ├── record_detailed.csv      # Enriched with telemetry (Step 1 output)
+│   │   └── telemetry/               # Logs, metrics, traces by date
+│   ├── Telecom/
+│   └── Market/
+├── main/
+│   ├── extract_record_details.py    # Step 1: Context extraction
+│   ├── prompt.py                    # Prompt construction utilities
+│   ├── generate.py                  # Step 3: Prompt generation
+│   ├── task_specification.json      # Step 2: Agent task spec
+│   ├── run_agent_standard.py        # Step 4: Agent execution
+│   └── evaluate.py                  # Results evaluation
+├── docs/                            # Project documentation
+├── README_ADAPTATION.md             # This file
+├── DATA_DICTIONARY.md               # Detailed schema & examples
+├── WORKFLOW_ARCHITECTURE.md         # Technical deep dive
+└── requirements.txt                 # Python dependencies
 ```
 
-For example, to evaluate the archived predictions of RCA-agent (Claude ver.), you can use the following command:
+## Key Concepts & Terminology
 
-```bash
-python -m main.evaluate \
-    -p \
-        rca/archive/agent-Bank.csv \
-        rca/archive/agent-Market-cloudbed-1.csv \
-        rca/archive/agent-Market-cloudbed-2.csv \
-        rca/archive/agent-Telecom.csv \
-    -q \
-        dataset/Bank/query.csv \
-        dataset/Market/cloudbed-1/query.csv \
-        dataset/Market/cloudbed-2/query.csv \
-        dataset/Telecom/query.csv \
-    -r \
-        test/agent_claude.csv
-```
+| Term | Definition |
+|------|-----------|
+| **Observation** | Technical metric-based description of system behavior anomaly |
+| **Cause** | Business/operational context explaining why the failure occurred |
+| **Adaptation Action** | Specific, actionable step to mitigate or prevent a failure |
+| **Curative Action** | Immediate response to an active failure condition |
+| **Preventive Action** | Proactive measure to stop future occurrences |
+| **Priority Score** | Numerical rank (0-100) reflecting action urgency and importance |
+| **Telemetry Window** | Time window (default ±5 minutes) around failure timestamp for context extraction |
+| **Heuristic Filtering** | Rule-based pattern matching to extract only relevant telemetry data |
 
-### 🚩 Reproduction
+## Contributing & Support
 
-To reproduce results in the paper, please first setup your API configurations before running OpenRCA's baselines. Taking OpenAI as an example, you can configure `rca/api_config.yaml` file as follows:
+For questions about the adaptation dataset methodology, refer to:
+- [DATA_DICTIONARY.md](DATA_DICTIONARY.md) for detailed schema information
+- [WORKFLOW_ARCHITECTURE.md](WORKFLOW_ARCHITECTURE.md) for technical pipeline details
+- [Original OpenRCA Project](https://github.com/IntelLabs/OpenRCA) for root cause analysis background
 
-```yaml
-SOURCE:   "OpenAI"
-MODEL:    "gpt-4o-2024-05-13"
-API_KEY:  "sk-xxxxxxxxxxxxxx"
-```
+## License
 
-Then, run the following commands for result reproduction:
+This project extends OpenRCA and maintains compatibility with its licensing. See [LICENSE](LICENSE) and [SECURITY.md](SECURITY.md) for details.
 
-```bash
-python -m rca.{TESTS} --dataset {DATASET_NAME}
-# Optional tests: run_agent_standard, run_baseline_balanced, run_baseline_oracle
-# Optional datasets: Telecom, Bank, Market/cloudbed-1, Market/cloudbed-2
-```
+---
 
-For example, if you want to evaluate RCA-agent on Bank dataset, you should use the following command:
-
-```bash
-python -m rca.run_agent_standard --dataset Bank
-```
-
-Note that the telemetry of two Market cloudbed service group are collected separately. For example, if you want to evaluate RCA-agent on the whole Market dataset, you should use the following command:
-
-```bash
-python -m rca.run_agent_standard --dataset Market/cloudbed-1
-python -m rca.run_agent_standard --dataset Market/cloudbed-2
-```
-
-The generated results and monitor files can be found in a new `test` directory created after running any test script.
-
-### 💽 Reconstruction
-
-You can generate new task for OpenRCA telemetry or your own privacy telemetry by modifying `main/task_specification.json` and run the following command:
-
-```bash
-python -m main.generate \
-    -s [your specification config file] \
-    -r [record file to generate query] \
-    -q [query file to save] \
-    -t [timezone of telemetry]
-```
-
-Note that the record schema should be consistent with the `record.csv` of OpenRCA.
-
-You can also re-generate random queries of OpenRCA with the following command:
-
-```bash
-python -m main.generate -d True
-```
-
-## ❓ FAQ
-
-**Q: Why can't I find any fault based on `records.csv` or `query.csv` / why does the fault appear at a different time or on a different component?**
-
-A: All faults are recorded in the **UTC+8** timezone. If you convert timestamps using your local time (and your local timezone is not UTC+8), this may cause a time offset, leading to mismatched results.
-
-**Q: Why am I often unable to find network-related faults?**
-
-A: Network-related faults usually cannot be identified using KPIs alone. Consider examining the latency relationship between parent spans and child spans in traces.
-
-**Q: Why can't my agent read telemetry data at the ground-truth timestamp recorded in `records.csv`?**
-
-A: All telemetry data has a fixed sampling frequency. There may not be a sampled data point at the exact corresponding timestamp.
-
-**Q: Can I submit evaluation results using my own custom agent?**
-
-A: Yes. You need to indicate whether your agent is open-source. If it is not open-source, you must provide the descriptions of your tools/MCPs/skills for review, to ensure that no ground-truth information from `records.csv` is being read from local directories or websites.
-
-**Q: What is the deployment relationship between Node, Pod, Container, and Service?**
-
-A:
-- For **Telecom**: You can find it [here](https://docs.google.com/spreadsheets/d/14j_z6K5vqwY9sQvkPsygksbL7Dm4bpiR/edit?usp=sharing&ouid=114089563960398803334&rtpof=true&sd=true).
-- For **Bank**: All components are at pod level, so only horizontal pod-level traces are available without a vertical deployment structure.
-- For **Market**: You can find it in `metric_container.csv`. For example, `node-5.adservice-2` means it is the 2nd pod of `adservice` deployed on `node-5`; `node-6.adservice-1` means the 1st pod deployed on `node-6`. Multiple pods together form a service (with fault tolerance).
-
-## 📚 Citation
-
-If you use OpenRCA in your research, please cite our paper:
-
-```bibtex
-@inproceedings{
-xu2025openrca,
-title={OpenRCA: Can Large Language Models Locate the Root Cause of Software Failures?},
-author={Xu, Junjielong and Zhang, Qinan and Zhong, Zhiqing and He, Shilin and Zhang, Chaoyun and Lin, Qingwei and Pei, Dan and He, Pinjia and Zhang, Dongmei and Zhang, Qi},
-booktitle={The Thirteenth International Conference on Learning Representations},
-year={2025},
-url={https://openreview.net/forum?id=M4qNIzQYpd}
-}
-```
-
-## Trademarks
-
-This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft 
-trademarks or logos is subject to and must follow 
-[Microsoft's Trademark & Brand Guidelines](https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks/usage/general).
-Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship.
-Any use of third-party trademarks or logos are subject to those third-party's policies.
-
-## Disclaimer
-The recommended models in this Repo are just examples, used to explore the potential of agent systems with the paper at ICLR2025. Users can replace the models in this Repo according to their needs. When using the recommended models in this Repo, you need to comply with the licenses of these models respectively. Microsoft shall not be held liable for any infringement of third-party rights resulting from your usage of this repo. Users agree to defend, indemnify and hold Microsoft harmless from and against all damages, costs, and attorneys' fees in connection with any claims arising from this Repo. If anyone believes that this Repo infringes on your rights, please notify the project owner email.
+**Last Updated**: 2026-08-24
+**Version**: 1.0 - Foundation Release
