@@ -1,0 +1,86 @@
+{
+  "dataset": "Bank",
+  "description": "Reason-driven telemetry filters for the Bank dataset. Patterns are case-insensitive regular expressions.",
+  "schema": {
+    "metric_container.csv": { "id_column": "cmdb_id", "kpi_column": "kpi_name" },
+    "metric_app.csv": {},
+    "trace_span.csv": { "id_column": "cmdb_id", "duration_column": "duration" },
+    "log_service.csv": { "id_column": "cmdb_id", "message_columns": ["value", "log_name"] }
+  },
+  "component_scope": {
+    "default": {
+      "metric_app.csv": null,
+      "trace_span.csv": null,
+      "default": "^{component}$"
+    }
+  },
+  "reasons": {
+    "high CPU usage": {
+      "metric": {
+        "metric_container.csv": { "kpi_include": ["cpu", "load", "proc", "thread"] },
+        "metric_app.csv": {}
+      },
+      "log": { "log_service.csv": { "message_include": ["error", "timeout", "slow", "fail", "exception", "refused"] } },
+      "trace": { "trace_span.csv": {} }
+    },
+    "high memory usage": {
+      "metric": {
+        "metric_container.csv": { "kpi_include": ["mem", "swap", "page", "cache"] },
+        "metric_app.csv": {}
+      },
+      "log": { "log_service.csv": { "message_include": ["memory", "outofmemory", "oom", "gc", "full gc", "error", "exception"] } },
+      "trace": { "trace_span.csv": {} }
+    },
+    "network latency": {
+      "metric": {
+        "metric_container.csv": { "kpi_include": ["net", "tcp", "rtt", "latency", "packet", "sock"] },
+        "metric_app.csv": {}
+      },
+      "log": { "log_service.csv": { "message_include": ["timeout", "connect", "reset", "slow", "retry", "exception"] } },
+      "trace": { "trace_span.csv": {} }
+    },
+    "network packet loss": {
+      "metric": {
+        "metric_container.csv": { "kpi_include": ["net", "tcp", "drop", "loss", "err", "retrans", "packet", "sock"] },
+        "metric_app.csv": {}
+      },
+      "log": { "log_service.csv": { "message_include": ["timeout", "reset", "refused", "connection", "retry", "exception"] } },
+      "trace": { "trace_span.csv": {} }
+    },
+    "high disk I/O read usage": {
+      "metric": {
+        "metric_container.csv": { "kpi_include": ["disk", "io", "read", "iowait", "fs"] },
+        "metric_app.csv": {}
+      },
+      "log": { "log_service.csv": { "message_include": ["slow", "timeout", "i/o", "read", "error", "exception"] } },
+      "trace": { "trace_span.csv": {} }
+    },
+    "high disk space usage": {
+      "metric": {
+        "metric_container.csv": { "kpi_include": ["disk", "space", "fs", "used", "inode", "util"] }
+      },
+      "log": { "log_service.csv": { "message_include": ["no space", "disk", "full", "write", "error"] } }
+    },
+    "high JVM CPU load": {
+      "metric": {
+        "metric_container.csv": { "kpi_include": ["jvm", "java", "cpu", "thread", "gc"] },
+        "metric_app.csv": {}
+      },
+      "log": { "log_service.csv": { "message_include": ["gc", "cpu", "thread", "pause", "exception"] } },
+      "trace": { "trace_span.csv": {} }
+    },
+    "JVM Out of Memory (OOM) Heap": {
+      "metric": {
+        "metric_container.csv": { "kpi_include": ["jvm", "java", "heap", "mem", "gc", "oom", "old", "eden"] },
+        "metric_app.csv": {}
+      },
+      "log": { "log_service.csv": { "message_include": ["outofmemory", "oom", "heap", "full gc", "cms", "gc", "exception"] } },
+      "trace": { "trace_span.csv": {} }
+    }
+  },
+  "default_reason": {
+    "metric": { "metric_container.csv": {}, "metric_app.csv": {} },
+    "log": { "log_service.csv": { "message_include": ["error", "fail", "timeout", "exception", "oom"] } },
+    "trace": { "trace_span.csv": {} }
+  }
+}

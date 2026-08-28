@@ -1,0 +1,264 @@
+{
+  "dataset": "Market",
+  "description": "Reason-driven telemetry filters for the Market (CCF AIOps 2022) datasets. Patterns are case-insensitive regular expressions.",
+  "schema": {
+    "metric_container.csv": { "id_column": "cmdb_id", "kpi_column": "kpi_name" },
+    "metric_node.csv": { "id_column": "cmdb_id", "kpi_column": "kpi_name" },
+    "metric_mesh.csv": { "id_column": "cmdb_id", "kpi_column": "kpi_name" },
+    "metric_runtime.csv": { "id_column": "cmdb_id", "kpi_column": "kpi_name" },
+    "metric_service.csv": { "id_column": "service" },
+    "trace_span.csv": {
+      "id_column": "cmdb_id",
+      "duration_column": "duration",
+      "status_column": "status_code",
+      "status_ok_values": ["0", "0.0"]
+    },
+    "log_service.csv": { "id_column": "cmdb_id", "message_columns": ["value", "log_name"] },
+    "log_proxy.csv": { "id_column": "cmdb_id", "message_columns": ["value", "log_name"] }
+  },
+  "topology": {
+    "file": "metric_container.csv",
+    "id_column": "cmdb_id",
+    "pattern": "^(?P<node>[^.]+)\\.(?P<pod>.+)$"
+  },
+  "component_scope": {
+    "node": {
+      "metric_node.csv": "^{component}$",
+      "metric_container.csv": "^{component}\\.",
+      "metric_mesh.csv": null,
+      "metric_runtime.csv": null,
+      "metric_service.csv": null,
+      "trace_span.csv": "^{pods}$",
+      "log_service.csv": "^{pods}$",
+      "log_proxy.csv": "^{pods}$",
+      "default": null
+    },
+    "pod": {
+      "metric_container.csv": "\\.{component}$",
+      "metric_node.csv": "^{node}$",
+      "metric_mesh.csv": "^{component}\\.",
+      "metric_runtime.csv": "^{service}\\.",
+      "metric_service.csv": "^{service}-",
+      "trace_span.csv": "^{component}$",
+      "log_service.csv": "^{component}$",
+      "log_proxy.csv": "^{component}$",
+      "default": "^{component}$"
+    },
+    "service": {
+      "metric_container.csv": "\\.{service}\\d*-\\d+$",
+      "metric_node.csv": null,
+      "metric_mesh.csv": "^{service}\\d*-\\d+\\.",
+      "metric_runtime.csv": "^{service}\\.",
+      "metric_service.csv": "^{service}-",
+      "trace_span.csv": "^{service}\\d*-\\d+$",
+      "log_service.csv": "^{service}\\d*-\\d+$",
+      "log_proxy.csv": "^{service}\\d*-\\d+$",
+      "default": "^{service}"
+    }
+  },
+  "reasons": {
+    "container CPU load": {
+      "metric": {
+        "metric_container.csv": { "kpi_include": ["cpu", "thread", "process"] },
+        "metric_node.csv": { "kpi_include": ["cpu", "load"] },
+        "metric_runtime.csv": { "kpi_include": ["cpu", "thread"] },
+        "metric_service.csv": {}
+      },
+      "log": {
+        "log_service.csv": {
+          "message_include": ["error", "timeout", "deadline", "unavailable", "failed", "slow", "retry", "canceled"]
+        }
+      },
+      "trace": { "trace_span.csv": {} }
+    },
+    "container memory load": {
+      "metric": {
+        "metric_container.csv": { "kpi_include": ["mem", "swap", "cache", "oom", "rss", "working_set"] },
+        "metric_node.csv": { "kpi_include": ["mem", "swap"] },
+        "metric_runtime.csv": { "kpi_include": ["mem", "heap", "gc", "buffer"] },
+        "metric_service.csv": {}
+      },
+      "log": {
+        "log_service.csv": {
+          "message_include": ["oom", "out of memory", "memory", "killed", "error", "timeout", "unavailable"]
+        }
+      },
+      "trace": { "trace_span.csv": {} }
+    },
+    "container network packet retransmission": {
+      "metric": {
+        "metric_container.csv": { "kpi_include": ["net", "tcp", "sock", "retrans", "packet"] },
+        "metric_node.csv": { "kpi_include": ["net", "tcp", "retrans", "packet"] },
+        "metric_mesh.csv": {},
+        "metric_service.csv": {}
+      },
+      "log": {
+        "log_service.csv": {
+          "message_include": ["timeout", "deadline", "unavailable", "connection", "reset", "refused", "eof", "retry", "error"]
+        },
+        "log_proxy.csv": {
+          "message_include": ["timeout", "upstream", "reset", "refused", "retry", "error", " 5\\d{2} "]
+        }
+      },
+      "trace": { "trace_span.csv": {} }
+    },
+    "container network packet corruption": {
+      "metric": {
+        "metric_container.csv": { "kpi_include": ["net", "tcp", "sock", "error", "drop", "corrupt", "packet"] },
+        "metric_node.csv": { "kpi_include": ["net", "tcp", "error", "drop", "packet"] },
+        "metric_mesh.csv": {},
+        "metric_service.csv": {}
+      },
+      "log": {
+        "log_service.csv": {
+          "message_include": ["timeout", "deadline", "unavailable", "connection", "reset", "refused", "eof", "corrupt", "error"]
+        },
+        "log_proxy.csv": {
+          "message_include": ["timeout", "upstream", "reset", "refused", "retry", "error", " 5\\d{2} "]
+        }
+      },
+      "trace": { "trace_span.csv": {} }
+    },
+    "container network latency": {
+      "metric": {
+        "metric_container.csv": { "kpi_include": ["net", "tcp", "sock", "latency", "rtt", "packet"] },
+        "metric_node.csv": { "kpi_include": ["net", "tcp", "latency"] },
+        "metric_mesh.csv": {},
+        "metric_service.csv": {}
+      },
+      "log": {
+        "log_service.csv": {
+          "message_include": ["timeout", "deadline exceeded", "slow", "latency", "canceled", "unavailable", "error"]
+        },
+        "log_proxy.csv": { "message_include": ["timeout", "upstream", "retry", "error", " 5\\d{2} "] }
+      },
+      "trace": { "trace_span.csv": {} }
+    },
+    "container packet loss": {
+      "metric": {
+        "metric_container.csv": { "kpi_include": ["net", "tcp", "sock", "drop", "loss", "error", "retrans", "packet"] },
+        "metric_node.csv": { "kpi_include": ["net", "tcp", "drop", "error", "packet"] },
+        "metric_mesh.csv": {},
+        "metric_service.csv": {}
+      },
+      "log": {
+        "log_service.csv": {
+          "message_include": ["timeout", "deadline", "unavailable", "connection", "reset", "refused", "eof", "retry", "error"]
+        },
+        "log_proxy.csv": {
+          "message_include": ["timeout", "upstream", "reset", "refused", "retry", "error", " 5\\d{2} "]
+        }
+      },
+      "trace": { "trace_span.csv": {} }
+    },
+    "container process termination": {
+      "metric": {
+        "metric_container.csv": { "kpi_include": ["process", "thread", "restart", "status", "up", "cpu", "mem"] },
+        "metric_runtime.csv": {},
+        "metric_service.csv": {}
+      },
+      "log": {
+        "log_service.csv": {
+          "message_include": ["panic", "fatal", "terminated", "killed", "exit", "restart", "shutdown", "connection refused", "unavailable", "eof", "error"]
+        },
+        "log_proxy.csv": { "message_include": ["refused", "no healthy upstream", "reset", "error", " 5\\d{2} "] }
+      },
+      "trace": { "trace_span.csv": {} }
+    },
+    "container read I/O load": {
+      "metric": {
+        "metric_container.csv": { "kpi_include": ["fs_read", "read", "io", "disk", "blkio"] },
+        "metric_node.csv": { "kpi_include": ["disk", "io", "iowait", "read"] },
+        "metric_service.csv": {}
+      },
+      "log": {
+        "log_service.csv": { "message_include": ["timeout", "slow", "i/o", "io error", "read", "unavailable", "error"] }
+      },
+      "trace": { "trace_span.csv": {} }
+    },
+    "container write I/O load": {
+      "metric": {
+        "metric_container.csv": { "kpi_include": ["fs_write", "write", "io", "disk", "blkio"] },
+        "metric_node.csv": { "kpi_include": ["disk", "io", "iowait", "write"] },
+        "metric_service.csv": {}
+      },
+      "log": {
+        "log_service.csv": { "message_include": ["timeout", "slow", "i/o", "io error", "write", "unavailable", "error"] }
+      },
+      "trace": { "trace_span.csv": {} }
+    },
+    "node CPU load": {
+      "metric": {
+        "metric_node.csv": { "kpi_include": ["cpu", "load", "iowait"] },
+        "metric_container.csv": { "kpi_include": ["cpu", "thread"] },
+        "metric_service.csv": {}
+      },
+      "log": {
+        "log_service.csv": { "message_include": ["timeout", "deadline", "slow", "unavailable", "retry", "error"] }
+      },
+      "trace": { "trace_span.csv": {} }
+    },
+    "node CPU spike": {
+      "metric": {
+        "metric_node.csv": { "kpi_include": ["cpu", "load", "iowait"] },
+        "metric_container.csv": { "kpi_include": ["cpu", "thread"] },
+        "metric_service.csv": {}
+      },
+      "log": {
+        "log_service.csv": { "message_include": ["timeout", "deadline", "slow", "unavailable", "retry", "error"] }
+      },
+      "trace": { "trace_span.csv": {} }
+    },
+    "node memory consumption": {
+      "metric": {
+        "metric_node.csv": { "kpi_include": ["mem", "swap", "cache", "buffer"] },
+        "metric_container.csv": { "kpi_include": ["mem", "swap", "oom"] },
+        "metric_service.csv": {}
+      },
+      "log": {
+        "log_service.csv": { "message_include": ["oom", "out of memory", "memory", "killed", "timeout", "unavailable", "error"] }
+      },
+      "trace": { "trace_span.csv": {} }
+    },
+    "node disk read I/O consumption": {
+      "metric": {
+        "metric_node.csv": { "kpi_include": ["disk", "io", "iowait", "read"] },
+        "metric_container.csv": { "kpi_include": ["fs_read", "read", "io"] },
+        "metric_service.csv": {}
+      },
+      "log": {
+        "log_service.csv": { "message_include": ["timeout", "slow", "i/o", "read", "unavailable", "error"] }
+      },
+      "trace": { "trace_span.csv": {} }
+    },
+    "node disk write I/O consumption": {
+      "metric": {
+        "metric_node.csv": { "kpi_include": ["disk", "io", "iowait", "write"] },
+        "metric_container.csv": { "kpi_include": ["fs_write", "write", "io"] },
+        "metric_service.csv": {}
+      },
+      "log": {
+        "log_service.csv": { "message_include": ["timeout", "slow", "i/o", "write", "unavailable", "error"] }
+      },
+      "trace": { "trace_span.csv": {} }
+    },
+    "node disk space consumption": {
+      "metric": {
+        "metric_node.csv": { "kpi_include": ["disk", "fs", "space", "inode", "usage", "df"] },
+        "metric_container.csv": { "kpi_include": ["fs", "disk", "write"] }
+      },
+      "log": {
+        "log_service.csv": { "message_include": ["no space", "disk", "full", "write", "error"] }
+      }
+    }
+  },
+  "default_reason": {
+    "metric": {
+      "metric_container.csv": {},
+      "metric_node.csv": {},
+      "metric_service.csv": {}
+    },
+    "log": { "log_service.csv": { "message_include": ["error", "fail", "timeout", "unavailable", "panic", "fatal"] } },
+    "trace": { "trace_span.csv": {} }
+  }
+}

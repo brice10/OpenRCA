@@ -1,0 +1,81 @@
+{
+  "dataset": "Telecom",
+  "description": "Reason-driven telemetry filters for the Telecom dataset (no log files). Patterns are case-insensitive regular expressions.",
+  "schema": {
+    "metric_container.csv": { "id_column": "cmdb_id", "kpi_column": "name" },
+    "metric_node.csv": { "id_column": "cmdb_id", "kpi_column": "name" },
+    "metric_middleware.csv": { "id_column": "cmdb_id", "kpi_column": "name" },
+    "metric_service.csv": { "id_column": "cmdb_id", "kpi_column": "name" },
+    "metric_app.csv": { "id_column": "serviceName" },
+    "trace_span.csv": {
+      "id_columns": ["cmdb_id", "dsName", "serviceName"],
+      "duration_column": "elapsedTime",
+      "status_column": "success",
+      "status_ok_values": ["True", "true", "TRUE"]
+    }
+  },
+  "component_scope": {
+    "default": {
+      "metric_app.csv": null,
+      "default": "^{component}$"
+    }
+  },
+  "reasons": {
+    "CPU fault": {
+      "metric": {
+        "metric_container.csv": { "kpi_include": ["cpu", "load", "thread"] },
+        "metric_node.csv": { "kpi_include": ["cpu", "load", "iowait"] },
+        "metric_service.csv": { "kpi_include": ["cpu", "load", "thread"] },
+        "metric_app.csv": {}
+      },
+      "trace": { "trace_span.csv": {} }
+    },
+    "network delay": {
+      "metric": {
+        "metric_container.csv": { "kpi_include": ["net", "tcp", "rtt", "delay", "latency", "packet"] },
+        "metric_node.csv": { "kpi_include": ["net", "tcp", "rtt", "delay", "packet"] },
+        "metric_service.csv": { "kpi_include": ["net", "tcp", "connect", "session"] },
+        "metric_app.csv": {}
+      },
+      "trace": { "trace_span.csv": {} }
+    },
+    "network loss": {
+      "metric": {
+        "metric_container.csv": { "kpi_include": ["net", "tcp", "drop", "loss", "err", "retrans", "packet"] },
+        "metric_node.csv": { "kpi_include": ["net", "tcp", "drop", "err", "packet", "retrans"] },
+        "metric_service.csv": { "kpi_include": ["net", "tcp", "connect", "session"] },
+        "metric_app.csv": {}
+      },
+      "trace": { "trace_span.csv": {} }
+    },
+    "db connection limit": {
+      "metric": {
+        "metric_service.csv": { "kpi_include": ["connect", "session", "thread", "process", "user", "cursor", "lock", "wait"] },
+        "metric_middleware.csv": { "kpi_include": ["connect", "client", "session", "block", "pool"] },
+        "metric_app.csv": {}
+      },
+      "trace": {
+        "trace_span.csv": { "column_include": { "callType": ["JDBC", "LOCAL", "RemoteProcess"] } }
+      }
+    },
+    "db close": {
+      "metric": {
+        "metric_service.csv": { "kpi_include": ["connect", "session", "active", "status", "up", "listener", "tns", "mem"] },
+        "metric_middleware.csv": { "kpi_include": ["connect", "client", "status", "up"] },
+        "metric_app.csv": {}
+      },
+      "trace": {
+        "trace_span.csv": { "column_include": { "callType": ["JDBC", "LOCAL", "RemoteProcess"] } }
+      }
+    }
+  },
+  "default_reason": {
+    "metric": {
+      "metric_container.csv": {},
+      "metric_node.csv": {},
+      "metric_service.csv": {},
+      "metric_app.csv": {}
+    },
+    "trace": { "trace_span.csv": {} }
+  }
+}
