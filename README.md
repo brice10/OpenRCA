@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project extends the foundational [Original OpenRCA Project](./README_OLD.md) to create a comprehensive **Adaptation Scenarios Dataset**. While OpenRCA provides the mechanism to identify root causes of failures in complex systems, this adaptation project takes the analysis one step further: it identifies and prioritizes the concrete actions needed to mitigate or prevent those failures.
+This project extends the foundational OpenRCA benchmark to create a comprehensive **Adaptation Scenarios Dataset**. While OpenRCA provides the mechanism to identify root causes of failures in complex systems, this adaptation project takes the analysis one step further: it identifies and prioritizes the concrete actions needed to mitigate or prevent those failures.
 
 ### Objective
 
@@ -312,9 +312,6 @@ OpenRCA/
 │   ├── run_agent_standard.py        # Step 4: Agent execution
 │   └── evaluate.py                  # Results evaluation
 ├── docs/                            # Project documentation
-├── README_ADAPTATION.md             # This file
-├── DATA_DICTIONARY.md               # Detailed schema & examples
-├── WORKFLOW_ARCHITECTURE.md         # Technical deep dive
 └── requirements.txt                 # Python dependencies
 ```
 
@@ -333,10 +330,7 @@ OpenRCA/
 
 ## Contributing & Support
 
-For questions about the adaptation dataset methodology, refer to:
-- [DATA_DICTIONARY.md](DATA_DICTIONARY.md) for detailed schema information
-- [WORKFLOW_ARCHITECTURE.md](WORKFLOW_ARCHITECTURE.md) for technical pipeline details
-- [Original OpenRCA Project](https://github.com/IntelLabs/OpenRCA) for root cause analysis background
+For questions about the adaptation dataset methodology, refer to the project source and issue tracker. For root cause analysis background, see the [Original OpenRCA Project](https://github.com/IntelLabs/OpenRCA).
 
 ## License
 
